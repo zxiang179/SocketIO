@@ -1,6 +1,7 @@
-package zx.netty.test;
+package zx.netty.ende1;
 
 import io.netty.bootstrap.ServerBootstrap;
+import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
@@ -8,21 +9,28 @@ import io.netty.channel.ChannelOption;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.codec.DelimiterBasedFrameDecoder;
+import io.netty.handler.codec.string.StringDecoder;
 
 public class Server {
 	
 	public static void main(String[] args) throws InterruptedException {
 		//1 第一个线程组用于接受client端连接的
-		NioEventLoopGroup bossGroup = new NioEventLoopGroup();
+		NioEventLoopGroup pGroup = new NioEventLoopGroup();
 		//2 第二个线程组用于实际的业务处理操作的
-		NioEventLoopGroup workerGroup = new NioEventLoopGroup();
+		NioEventLoopGroup cGroup = new NioEventLoopGroup();
 		//3 创建一个辅助类Bootstrap，就是对我们的Server进行一系列的配置
 		ServerBootstrap b = new ServerBootstrap();
-		b.group(bossGroup,workerGroup)//把两个工作线程组加入进来
+		b.group(pGroup,cGroup)//把两个工作线程组加入进来
 		.channel(NioServerSocketChannel.class)//使用NIOServerSocketChannel这种类型的通道
 		.childHandler(new ChannelInitializer<SocketChannel>() {//使用childHandler绑定具体的事件处理器
 			@Override
 			protected void initChannel(SocketChannel sc) throws Exception {
+				//设置特殊分隔符,当出现下滑线
+				ByteBuf buf = Unpooled.copiedBuffer("$_".getBytes());
+				sc.pipeline().addLast(new DelimiterBasedFrameDecoder(1024, buf));
+				//设置字符串形式的解码
+				sc.pipeline().addLast(new StringDecoder());
 				sc.pipeline().addLast(new ServerHandler());
 			}
 		})
@@ -38,9 +46,10 @@ public class Server {
 		 * 要注意的是：backlog对程序的连接数并无影响，backlog影响的知识还没有被accept取出的连接。
 		 */
 		//设置TCP缓冲区
-		.option(ChannelOption.SO_BACKLOG, 128)
+//		.option(ChannelOption.SO_BACKLOG, 128)
 		//保持连接
-		.childOption(ChannelOption.SO_KEEPALIVE, true);
+//		.childOption(ChannelOption.SO_KEEPALIVE, true)
+		;
 		
 		//绑定指定的端口进行监听
 		ChannelFuture f = b.bind(8765).sync();
@@ -49,8 +58,8 @@ public class Server {
 		f.channel().closeFuture().sync();
 //		f2.channel().closeFuture().sync();
 		
-		bossGroup.shutdownGracefully();
-		workerGroup.shutdownGracefully();
+		pGroup.shutdownGracefully();
+		cGroup.shutdownGracefully();
 		
 	}
 

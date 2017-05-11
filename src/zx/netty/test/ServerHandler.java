@@ -1,6 +1,9 @@
 package zx.netty.test;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerAdapter;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.util.ReferenceCountUtil;
@@ -18,6 +21,13 @@ public class ServerHandler extends ChannelHandlerAdapter{
 			buf.readBytes(data);
 			String request = new String(data,"utf-8");
 			System.out.println("server:"+request);
+			//写给客户端
+			String response = "我是反馈的消息";
+			ChannelFuture channelFuture = ctx.channel().writeAndFlush(Unpooled.copiedBuffer("Hi Client!".getBytes()));
+			//写完后断开连接
+//			channelFuture.addListener(ChannelFutureListener.CLOSE);
+//			ctx.channel().flush();
+			
 		}finally{
 			ReferenceCountUtil.release(msg);
 		}

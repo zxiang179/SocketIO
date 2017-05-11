@@ -1,4 +1,4 @@
-package zx.netty.test;
+package zx.netty.ende2;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -9,22 +9,17 @@ import io.netty.util.ReferenceCountUtil;
 public class ClientHandler extends ChannelHandlerAdapter{
 	
 	@Override
+	public void channelActive(ChannelHandlerContext ctx) throws Exception {
+		System.out.println("client channel active...");
+	}
+	
+	@Override
 	public void channelRead(ChannelHandlerContext ctx, Object msg)
 			throws Exception {
-//		((ByteBuf)msg).release();
 		try{
-			//do sth msg
-			ByteBuf buf = (ByteBuf)msg;
-			byte[] data = new byte[buf.readableBytes()];
-			buf.readBytes(data);
-			String request = new String(data,"utf-8");
-			System.out.println("client:"+request);
-			//写给服务器端
-			/*String response = "我是反馈给服务器的消息";
-			ctx.channel().writeAndFlush(Unpooled.copiedBuffer("999".getBytes()));*/
-			
+			String response = (String)msg;
+			System.out.println("Client:"+response);
 		}finally{
-			//读数据必须释放
 			ReferenceCountUtil.release(msg);
 		}
 	}
