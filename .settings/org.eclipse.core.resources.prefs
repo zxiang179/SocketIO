@@ -1,2 +1,6 @@
 eclipse.preferences.version=1
+encoding//src/zx/netty/udp/Client.java=UTF-8
+encoding//src/zx/netty/udp/ClientHandler.java=UTF-8
+encoding//src/zx/netty/udp/Server.java=UTF-8
+encoding//src/zx/netty/udp/ServerHandler.java=UTF-8
 encoding//src/zx/netty/util/TestSystemProperty.java=UTF-8
