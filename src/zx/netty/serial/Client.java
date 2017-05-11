@@ -1,7 +1,13 @@
 package zx.netty.serial;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+
 import org.jboss.marshalling.Marshalling;
 
+import zx.netty.util.GzipUtil;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
@@ -14,7 +20,7 @@ import io.netty.handler.logging.LoggingHandler;
 
 public class Client {
 	
-	public static void main(String[] args) throws InterruptedException {
+	public static void main(String[] args) throws Exception {
 		NioEventLoopGroup group = new NioEventLoopGroup();
 		Bootstrap b = new Bootstrap();
 		b.group(group)
@@ -37,6 +43,16 @@ public class Client {
 			req.setId(""+i);
 			req.setName("pro"+i);
 			req.setRequestMessage("数据信息"+i);
+			
+			//读取文件
+	    	String readPath = System.getProperty("user.dir") + File.separatorChar + "sources" +  File.separatorChar + "001.jpg";
+	        File file = new File(readPath);  
+	        FileInputStream in = new FileInputStream(file);  
+	        byte[] data = new byte[in.available()];  
+	        in.read(data);  
+	        in.close();  
+	        req.setAttachment(GzipUtil.gzip(data));
+	        
 			cf.channel().writeAndFlush(req);
 		}
 		
