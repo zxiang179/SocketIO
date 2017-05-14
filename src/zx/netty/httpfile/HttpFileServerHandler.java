@@ -113,8 +113,8 @@ public class HttpFileServerHandler extends SimpleChannelInboundHandler<FullHttpR
 		
 		//获取文件长度
 		long fileLength = randomAccessFile.length();
-	    //建立响应对象
-		HttpResponse response = new DefaultFullHttpResponse(HTTP_1_1, OK);
+	    //建立响应对象 无需使用DefaultFullHttpResponse
+		HttpResponse response = new DefaultHttpResponse(HTTP_1_1, OK);
 		//设置响应信息
 		HttpHeaderUtil.setContentLength(response, fileLength);
 		//设置相应头
@@ -125,36 +125,33 @@ public class HttpFileServerHandler extends SimpleChannelInboundHandler<FullHttpR
 		}
 		//进行写出
 		ctx.write(response);
+//		=====================
 		
-		//构造发送文件线程 将文件写入chunked缓冲区
+		//构造发送文件线程，将文件写入到Chunked缓冲区中
 		ChannelFuture sendFileFuture;
 		//写出ChunkedFile
-		sendFileFuture = ctx.write(new ChunkedFile(randomAccessFile,0,fileLength,8192),ctx.newProgressivePromise());
+		sendFileFuture = ctx.write(new ChunkedFile(randomAccessFile, 0, fileLength, 8192), ctx.newProgressivePromise());
 		//添加传输监听
 		sendFileFuture.addListener(new ChannelProgressiveFutureListener() {
-			@Override
-			public void operationProgressed(ChannelProgressiveFuture future, long progress,
-					long total) throws Exception {
-				if(total<0){//total unknown
-					System.err.println("Transfer progress: "+progress);
-				}else{
-					System.err.println("Transfer progress: "+progress+"/"+total);
+		    @Override
+		    public void operationProgressed(ChannelProgressiveFuture future, long progress, long total) {
+				if (total < 0) { // total unknown
+				    System.err.println("Transfer progress: " + progress);
+				} else {
+				    System.err.println("Transfer progress: " + progress + " / " + total);
 				}
-			}
-			
-			@Override
-			public void operationComplete(ChannelProgressiveFuture arg0)
-					throws Exception {
-				System.out.println("Transfer complete");
-			}
-			
+		    }
+		    @Override
+		    public void operationComplete(ChannelProgressiveFuture future) throws Exception {
+		    	System.out.println("Transfer complete.");
+		    }
 		});
 		
-		//使用chunked编码，最后则需要发送一个编码结束的看空消息体进行标记，表示所有消息体已经成功发送完成
+		//如果使用Chunked编码，最后则需要发送一个编码结束的看空消息体，进行标记，表示所有消息体已经成功发送完成。
 		ChannelFuture lastContentFuture = ctx.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT);
-		//如果当前连接请求非keep-alive，最后一包消息发送完成之后服务器主动关闭连接
-		if(!HttpHeaderUtil.isKeepAlive(request)){
-			lastContentFuture.addListener(ChannelFutureListener.CLOSE);
+		//如果当前连接请求非Keep-Alive ，最后一包消息发送完成后 服务器主动关闭连接
+		if (!HttpHeaderUtil.isKeepAlive(request)) {
+		    lastContentFuture.addListener(ChannelFutureListener.CLOSE);
 		}
 	}
 	
